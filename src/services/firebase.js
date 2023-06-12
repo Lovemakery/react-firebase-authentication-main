@@ -1,7 +1,6 @@
 import firebase from "firebase/compat/app";
-import { getFirestore, collection, addDoc, where, query, getDocs} from "firebase/firestore"
+import {  getFirestore, collection, addDoc, where, query, getDocs, doc, deleteDoc } from "firebase/firestore";
 import "firebase/compat/auth";
-
 const firebaseConfig = {
   apiKey: "AIzaSyBkgCe8ll-O6hp7LZ-PUwa3PNncIpNPFS4",
   authDomain: "catchcam-1c2b0.firebaseapp.com",
@@ -77,16 +76,18 @@ export const registerWithEmailAndPassword = async (name, email, password) => {
 // };
 export const getImages = async () => {
   try {
+    const user = auth.currentUser;
     const imagesRef = collection(db, "images");
-    const snapshot = await getDocs(imagesRef);
+    const queryRef = query(imagesRef, where("uid", "==", user.uid)); // Add this line to filter images by the user's UID
+    const snapshot = await getDocs(queryRef);
     const images = [];
 
     snapshot.forEach((doc) => {
       images.push({
         id: doc.id,
-        url: doc.data().imageUrl, // Replace "imageUrl" with the field name that contains the image URL or base64 string in your Firestore document
+        url: doc.data().imageUrl,
         name: doc.data().imageName,
-        place: doc.data().Place, // Replace "imageName" with the field name that contains the image name in your Firestore document
+        place: doc.data().Place,
       });
     });
 
@@ -94,5 +95,13 @@ export const getImages = async () => {
   } catch (err) {
     console.error(err);
     alert(err.message);
+  }
+};
+export const deleteImage = async (imageId) => {
+  try {
+    const imageRef = doc(db, "images", imageId);
+    await deleteDoc(imageRef);
+  } catch (error) {
+    throw new Error("Failed to delete image");
   }
 };
